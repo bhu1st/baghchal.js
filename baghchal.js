@@ -229,29 +229,128 @@
         return "m" + indexToCoord(bestMove.f) + indexToCoord(bestMove.t);
     }
 
+    const DEFAULT_THEME = {
+        bg: "",                      // Background image URL/path or Image element
+        bgColor: "#ffffff",          // Canvas/Board background color (default white)
+        bagh: "",                    // Custom tiger image URL/path or Image element
+        goat: "",                    // Custom goat image URL/path or Image element
+        gridSize: 5,                 // Grid size (5x5)
+        canvasPadding: 12,            // Padding around canvas outer frame
+        framePadding: 24,            // Padding between outer frame and inner frame (where A-E, 1-5 labels sit)
+        boardPadding: 32,            // Margin inside inner frame surrounding board grid lines
+        lineColor: "#777777",        // Grid & diagonal line color (default #777777)
+        canvasBorderColor: "#777777",// Outer canvas border color (default #777777)
+        frameColor: "#777777",       // Inner frame border color (default #777777)
+        labelColor: "#777777",       // Row & Column markers color (A-E, 1-5)
+        labelFont: "",               // Custom marker font (auto-calculated if empty)
+        emptyColor: "#777777",       // Empty point indicator color
+        frameLineWidth: 3,           // Outer/inner frame line thickness
+        lineWidth: 2,                // Grid line thickness
+        pieceRadiusRatio: 0.08,      // Empty point dot radius ratio relative to cellSize
+        tigerEmoji: "🐯",            // Default tiger emoji if no custom image sprite
+        goatEmoji: "🐐",             // Default goat emoji if no custom image sprite
+        showGridLabels: true,        // Toggle for drawing grid indexes
+        drawFrames: true             // Toggle for outer/inner frames
+    };
+
     // Main Baghchal Class for Rendering in DOM
     class Baghchal {
         constructor(targetContainer, obxString, options = {}) {
             this.container = typeof targetContainer === 'string' ? document.querySelector(targetContainer) : targetContainer;
             if (!this.container) throw new Error("Baghchal: Invalid target container element");
 
-            this.options = Object.assign({
-                width: 380,
-                height: 380,
+            const defaultOptions = {
+                width: 420,
+                height: 420,
                 loopCaptureAnimation: true,
                 showStateInfo: true,
-                themeColor: "rgb(0, 64, 65)",
                 accentColor: "#ffff00"
-            }, options);
+            };
+
+            this.options = Object.assign({}, defaultOptions, options);
+
+            // Construct theme configuration
+            const userTheme = options.theme || {};
+            this.theme = Object.assign({}, DEFAULT_THEME, userTheme);
+
+            // Directly passed theme properties override theme object defaults
+            if (options.bg !== undefined) this.theme.bg = options.bg;
+            if (options.bgColor !== undefined) this.theme.bgColor = options.bgColor;
+            if (options.boardBackground !== undefined) this.theme.bgColor = options.boardBackground;
+            if (options.lineColor !== undefined) this.theme.lineColor = options.lineColor;
+            if (options.bagh !== undefined) this.theme.bagh = options.bagh;
+            if (options.goat !== undefined) this.theme.goat = options.goat;
+            if (options.labelColor !== undefined) this.theme.labelColor = options.labelColor;
 
             this.anims = [];
             this.particles = [];
             this.isDestroyed = false;
             this.lastLoopBiteTime = 0;
 
+            this.loadThemeImages();
             this.initDOM();
             this.setObx(obxString || "TXXXT/XXXXX/XXXXX/XXXXX/TXXXT g @20 c0 -");
             this.startLoop();
+        }
+
+        loadThemeImages() {
+            // Background Image
+            if (this.theme.bg && typeof this.theme.bg === 'string') {
+                this.boardBgImg = new Image();
+                this.boardBgImg.onload = () => { if (!this.isDestroyed) this.render(); };
+                this.boardBgImg.src = this.theme.bg;
+            } else if (this.theme.bg instanceof HTMLImageElement) {
+                this.boardBgImg = this.theme.bg;
+            } else {
+                this.boardBgImg = null;
+            }
+
+            // Bagh (Tiger) Image
+            if (this.theme.bagh && typeof this.theme.bagh === 'string') {
+                this.baghImg = new Image();
+                this.baghImg.onload = () => { if (!this.isDestroyed) this.render(); };
+                this.baghImg.src = this.theme.bagh;
+            } else if (this.theme.bagh instanceof HTMLImageElement) {
+                this.baghImg = this.theme.bagh;
+            } else {
+                this.baghImg = null;
+            }
+
+            // Goat Image
+            if (this.theme.goat && typeof this.theme.goat === 'string') {
+                this.goatImg = new Image();
+                this.goatImg.onload = () => { if (!this.isDestroyed) this.render(); };
+                this.goatImg.src = this.theme.goat;
+            } else if (this.theme.goat instanceof HTMLImageElement) {
+                this.goatImg = this.theme.goat;
+            } else {
+                this.goatImg = null;
+            }
+        }
+
+        setTheme(newTheme = {}) {
+            Object.assign(this.theme, newTheme);
+            this.loadThemeImages();
+            if (this.canvas && this.theme.canvasBorderColor) {
+                this.canvas.style.border = `2px solid ${this.theme.canvasBorderColor}`;
+            }
+        }
+
+        setCanvasSize(width, height) {
+            const w = parseInt(width, 10) || 420;
+            const h = parseInt(height, 10) || w;
+            this.options.width = w;
+            this.options.height = h;
+
+            if (this.canvas) {
+                this.canvas.width = w;
+                this.canvas.height = h;
+                this.canvas.style.maxWidth = w + "px";
+                this.canvas.style.aspectRatio = (w / h).toString();
+            }
+            if (this.infoBox) {
+                this.infoBox.style.maxWidth = w + "px";
+            }
         }
 
         initDOM() {
@@ -261,18 +360,20 @@
             this.container.style.alignItems = "center";
             this.container.style.gap = "8px";
 
+            const width = parseInt(this.options.width, 10) || 420;
+            const height = parseInt(this.options.height, 10) || width;
+
             // Canvas Element
             this.canvas = document.createElement("canvas");
-            this.canvas.width = 420;
-            this.canvas.height = 420;
+            this.canvas.width = width;
+            this.canvas.height = height;
             this.canvas.style.width = "100%";
-            this.canvas.style.maxWidth = this.options.width + "px";
+            this.canvas.style.maxWidth = width + "px";
             this.canvas.style.height = "auto";
-            this.canvas.style.aspectRatio = "1/1";
-            this.canvas.style.background = "#e0d5c1";
-            this.canvas.style.border = `4px solid ${this.options.themeColor}`;
+            this.canvas.style.aspectRatio = (width / height).toString();
+            this.canvas.style.border = `2px solid ${this.theme.canvasBorderColor}`;
             this.canvas.style.borderRadius = "8px";
-            this.canvas.style.boxShadow = "0 5px 15px rgba(0,0,0,0.3)";
+            this.canvas.style.boxShadow = "0 5px 15px rgba(0,0,0,0.15)";
             this.ctx = this.canvas.getContext("2d");
             this.container.appendChild(this.canvas);
 
@@ -280,7 +381,7 @@
             if (this.options.showStateInfo) {
                 this.infoBox = document.createElement("div");
                 this.infoBox.style.width = "100%";
-                this.infoBox.style.maxWidth = this.options.width + "px";
+                this.infoBox.style.maxWidth = width + "px";
                 this.infoBox.style.fontFamily = "monospace";
                 this.infoBox.style.fontSize = "11px";
                 this.infoBox.style.background = "rgba(0,0,0,0.6)";
@@ -325,8 +426,13 @@
         }
 
         triggerCaptureExplosion(cap) {
-            const x = cap.midX;
-            const y = cap.midY;
+            let x = cap.midX;
+            let y = cap.midY;
+
+            if (cap.midIdx !== undefined && this.state && this.state.points && this.state.points[cap.midIdx]) {
+                x = this.state.points[cap.midIdx].x;
+                y = this.state.points[cap.midIdx].y;
+            }
 
             for (let i = 0; i < 35; i++) {
                 this.particles.push({
@@ -339,58 +445,169 @@
             }
         }
 
-        render() {
-            if (this.isDestroyed || !this.ctx) return;
+        drawMarkers(boardStartX, boardStartY, cellSize, boardSize, innerFrameStartX, innerFrameStartY, innerFrameSize) {
             const ctx = this.ctx;
-            const now = performance.now();
-
-            // Clear Background
-            ctx.globalAlpha = 1.0;
-            ctx.fillStyle = "#e0d5c1";
-            ctx.fillRect(0, 0, 420, 420);
-
-            // Draw Board Grid
-            ctx.strokeStyle = "rgba(0, 64, 65, 0.8)";
-            ctx.lineWidth = 2;
-            for (let i = 0; i < 5; i++) {
-                ctx.beginPath(); ctx.moveTo(50, 50 + i * 80); ctx.lineTo(370, 50 + i * 80); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(50 + i * 80, 50); ctx.lineTo(50 + i * 80, 370); ctx.stroke();
-            }
-            ctx.beginPath(); ctx.moveTo(50, 50); ctx.lineTo(370, 370); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(370, 50); ctx.lineTo(50, 370); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(210, 50); ctx.lineTo(370, 210); ctx.lineTo(210, 370); ctx.lineTo(50, 210); ctx.closePath(); ctx.stroke();
-
-            // Draw Grid Labels (ABCDE horizontally, 12345 vertically)
-            ctx.font = "bold 13px 'Segoe UI', monospace";
-            ctx.fillStyle = "rgba(0, 64, 65, 0.85)";
+            ctx.fillStyle = this.theme.labelColor || "#777777";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
 
+            const labelFontSize = Math.max(10, Math.round(cellSize * 0.10));
+            ctx.font = this.theme.labelFont || `bold ${labelFontSize}px 'Segoe UI', Arial, sans-serif`;
+
             const cols = ["A", "B", "C", "D", "E"];
-            cols.forEach((col, i) => {
-                const x = 50 + i * 80;
-                ctx.fillText(col, x, 20);   // Top
-                ctx.fillText(col, x, 400);  // Bottom
-            });
-
             const rows = ["1", "2", "3", "4", "5"];
-            rows.forEach((row, i) => {
-                const y = 50 + i * 80;
-                ctx.fillText(row, 20, y);   // Left
-                ctx.fillText(row, 400, y);  // Right
+
+            const framePadding = this.theme.framePadding !== undefined ? this.theme.framePadding : 32;
+            const topLabelY = innerFrameStartY - framePadding / 2;
+            const bottomLabelY = innerFrameStartY + innerFrameSize + framePadding / 2;
+            const leftLabelX = innerFrameStartX - framePadding / 2;
+            const rightLabelX = innerFrameStartX + innerFrameSize + framePadding / 2;
+
+            // Column markers (A-E placed top & bottom between outer frame & inner frame)
+            cols.forEach((col, i) => {
+                const x = boardStartX + i * cellSize;
+                ctx.fillText(col, x, topLabelY);
+                ctx.fillText(col, x, bottomLabelY);
             });
 
-            // Draw Points and Pieces
+            // Row markers (1-5 placed left & right between outer frame & inner frame)
+            rows.forEach((row, i) => {
+                const y = boardStartY + i * cellSize;
+                ctx.fillText(row, leftLabelX, y);
+                ctx.fillText(row, rightLabelX, y);
+            });
+        }
+
+        render() {
+            if (this.isDestroyed || !this.ctx) return;
+            const ctx = this.ctx;
+            const canvasWidth = this.canvas.width;
+            const canvasHeight = this.canvas.height;
+            const canvasSize = Math.min(canvasWidth, canvasHeight);
+            const now = performance.now();
+
+            // Clear Canvas
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+            // Draw Background (Image or Color)
+            if (this.boardBgImg && this.boardBgImg.complete && this.boardBgImg.naturalWidth !== 0) {
+                ctx.drawImage(this.boardBgImg, 0, 0, canvasWidth, canvasHeight);
+            } else {
+                ctx.fillStyle = this.theme.bgColor || "#ffffff";
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            }
+
+            // Calculate grid dimensions & offsets matching baghchal_builder.js
+            const canvasPadding = this.theme.canvasPadding !== undefined ? this.theme.canvasPadding : 4;
+            const framePadding = this.theme.framePadding !== undefined ? this.theme.framePadding : 32;
+            const boardPadding = this.theme.boardPadding !== undefined ? this.theme.boardPadding : 44;
+
+            const outerFrameStartX = (canvasWidth - canvasSize) / 2 + canvasPadding;
+            const outerFrameStartY = (canvasHeight - canvasSize) / 2 + canvasPadding;
+            const outerFrameSize = canvasSize - canvasPadding * 2;
+
+            const innerFrameStartX = outerFrameStartX + framePadding;
+            const innerFrameStartY = outerFrameStartY + framePadding;
+            const innerFrameSize = outerFrameSize - framePadding * 2;
+
+            const boardStartX = innerFrameStartX + boardPadding;
+            const boardStartY = innerFrameStartY + boardPadding;
+            const boardSize = innerFrameSize - boardPadding * 2;
+            const cellSize = boardSize / (this.theme.gridSize - 1);
+
+            // Draw Outer & Inner Frames
+            if (this.theme.drawFrames !== false) {
+                ctx.strokeStyle = this.theme.canvasBorderColor || "#777777";
+                ctx.lineWidth = this.theme.frameLineWidth || 3;
+                ctx.strokeRect(outerFrameStartX, outerFrameStartY, outerFrameSize, outerFrameSize);
+
+                ctx.strokeStyle = this.theme.frameColor || "#777777";
+                ctx.lineWidth = this.theme.frameLineWidth || 3;
+                ctx.strokeRect(innerFrameStartX, innerFrameStartY, innerFrameSize, innerFrameSize);
+            }
+
+            // Draw Board Grid lines
+            ctx.strokeStyle = this.theme.lineColor || "#777777";
+            ctx.lineWidth = this.theme.lineWidth || 2;
+
+            for (let i = 0; i < this.theme.gridSize; i++) {
+                let x = boardStartX + i * cellSize;
+                let y = boardStartY + i * cellSize;
+
+                ctx.beginPath();
+                ctx.moveTo(x, boardStartY);
+                ctx.lineTo(x, boardStartY + boardSize);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(boardStartX, y);
+                ctx.lineTo(boardStartX + boardSize, y);
+                ctx.stroke();
+            }
+
+            // Draw Main Diagonal lines
+            ctx.beginPath();
+            ctx.moveTo(boardStartX, boardStartY);
+            ctx.lineTo(boardStartX + boardSize, boardStartY + boardSize);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(boardStartX + boardSize, boardStartY);
+            ctx.lineTo(boardStartX, boardStartY + boardSize);
+            ctx.stroke();
+
+            // Draw Diamond / Diagonal Square
+            ctx.beginPath();
+            ctx.moveTo(boardStartX + 2 * cellSize, boardStartY);
+            ctx.lineTo(boardStartX + 4 * cellSize, boardStartY + 2 * cellSize);
+            ctx.lineTo(boardStartX + 2 * cellSize, boardStartY + 4 * cellSize);
+            ctx.lineTo(boardStartX, boardStartY + 2 * cellSize);
+            ctx.closePath();
+            ctx.stroke();
+
+            // Draw Grid Index Markers (A-E top, 1-5 left & right)
+            if (this.theme.showGridLabels !== false) {
+                this.drawMarkers(boardStartX, boardStartY, cellSize, boardSize, innerFrameStartX, innerFrameStartY, innerFrameSize);
+            }
+
+            // Draw Points and Game Pieces
             const points = this.state.points;
-            points.forEach((p, i) => {
-                ctx.fillStyle = "rgb(0, 64, 65)";
-                ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
+            points.forEach((p) => {
+                const px = boardStartX + p.c * cellSize;
+                const py = boardStartY + p.r * cellSize;
+
+                p.x = px;
+                p.y = py;
 
                 if (p.piece) {
-                    ctx.font = "38px Arial";
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-                    ctx.fillText(p.piece === "tiger" ? "🐯" : "🐐", p.x, p.y);
+                    if (p.piece === "tiger") {
+                        if (this.baghImg && this.baghImg.complete && this.baghImg.naturalWidth !== 0) {
+                            const pieceSize = cellSize * 0.75;
+                            ctx.drawImage(this.baghImg, px - pieceSize / 2, py - pieceSize / 2, pieceSize, pieceSize);
+                        } else {
+                            ctx.font = `${Math.round(cellSize * 0.55)}px Arial`;
+                            ctx.textAlign = "center";
+                            ctx.textBaseline = "middle";
+                            ctx.fillText(this.theme.tigerEmoji || "🐯", px, py);
+                        }
+                    } else if (p.piece === "goat") {
+                        if (this.goatImg && this.goatImg.complete && this.goatImg.naturalWidth !== 0) {
+                            const pieceSize = cellSize * 0.75;
+                            ctx.drawImage(this.goatImg, px - pieceSize / 2, py - pieceSize / 2, pieceSize, pieceSize);
+                        } else {
+                            ctx.font = `${Math.round(cellSize * 0.55)}px Arial`;
+                            ctx.textAlign = "center";
+                            ctx.textBaseline = "middle";
+                            ctx.fillText(this.theme.goatEmoji || "🐐", px, py);
+                        }
+                    }
+                } else if (this.theme.showEmptyPoints !== false) {
+                    ctx.fillStyle = this.theme.emptyColor || "#888888";
+                    ctx.strokeStyle = this.theme.lineColor || "#888888";
+                    ctx.beginPath();
+                    const dotRadius = Math.max(3, cellSize * (this.theme.pieceRadiusRatio || 0.08));
+                    ctx.arc(px, py, dotRadius, 0, Math.PI * 2);
+                    ctx.fill();
                 }
             });
 
@@ -402,7 +619,7 @@
                 }
             }
 
-            // Draw Blood Particles
+            // Draw Particles
             for (let i = this.particles.length - 1; i >= 0; i--) {
                 let p = this.particles[i];
                 p.x += p.vx;
@@ -455,6 +672,7 @@
     Baghchal.indexToCoord = indexToCoord;
     Baghchal.isConnected = isConnected;
     Baghchal.getJump = getJump;
+    Baghchal.DEFAULT_THEME = DEFAULT_THEME;
 
     return Baghchal;
 }));

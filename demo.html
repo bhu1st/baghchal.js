@@ -178,11 +178,28 @@
 
             <div class="card-title" style="margin-top: 10px;">2. Next Move Generator Output</div>
             <div id="nextMoveOutput" class="output-box">Click "Generate Next Move" to calculate</div>
+            
+            <div class="card-title" style="margin-top: 15px;">3. Board Theme Settings</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
+                <label>Board BG Color: <input type="color" id="themeBgColor" value="#ffffff" onchange="updateLiveTheme()"></label>
+                <label>Grid Line Color: <input type="color" id="themeLineColor" value="#777777" onchange="updateLiveTheme()"></label>
+                <label>Label Color: <input type="color" id="themeLabelColor" value="#777777" onchange="updateLiveTheme()"></label>
+                <label>Border Color: <input type="color" id="themeBorderColor" value="#777777" onchange="updateLiveTheme()"></label>
+                <label style="grid-column: span 2;">Canvas Width (px): 
+                    <input type="range" id="themeWidth" min="250" max="600" value="380" oninput="updateLiveSize(this.value)">
+                    <span id="widthValue">380px</span>
+                </label>
+            </div>
+            <div class="btn-group" style="margin-top: 8px;">
+                <button class="secondary" onclick="applyPresetTheme('default')">Default White/#777777</button>
+                <button class="secondary" onclick="applyPresetTheme('dark')">Dark Theme</button>
+                <button class="secondary" onclick="applyPresetTheme('wood')">Wood Theme</button>
+            </div>
         </div>
 
         <!-- Rendered Board Output -->
         <div class="card">
-            <div class="card-title">3. Canvas Board Output</div>
+            <div class="card-title">4. Canvas Board Output</div>
             <div id="boardContainer"></div>
         </div>
     </div>
@@ -201,19 +218,67 @@
         function renderBoard(obxStr) {
             document.getElementById('obxInput').value = obxStr;
 
-            // Re-instantiate Baghchal library in boardContainer
             if (gameInstance) {
                 gameInstance.destroy();
             }
 
+            const currentWidth = parseInt(document.getElementById('themeWidth').value, 10) || 380;
+            const bgColor = document.getElementById('themeBgColor').value;
+            const lineColor = document.getElementById('themeLineColor').value;
+            const labelColor = document.getElementById('themeLabelColor').value;
+            const borderColor = document.getElementById('themeBorderColor').value;
+
             gameInstance = new Baghchal('#boardContainer', obxStr, {
-                width: 340,
-                height: 340,
+                width: currentWidth,
+                height: currentWidth,
                 loopCaptureAnimation: true,
-                showStateInfo: true
+                showStateInfo: true,
+                theme: {
+                    bgColor: bgColor,
+                    lineColor: lineColor,
+                    labelColor: labelColor,
+                    canvasBorderColor: borderColor
+                }
             });
 
             document.getElementById('nextMoveOutput').innerText = 'Click "Generate Next Move" to calculate';
+        }
+
+        function updateLiveTheme() {
+            if (!gameInstance) return;
+            gameInstance.setTheme({
+                bgColor: document.getElementById('themeBgColor').value,
+                lineColor: document.getElementById('themeLineColor').value,
+                labelColor: document.getElementById('themeLabelColor').value,
+                canvasBorderColor: document.getElementById('themeBorderColor').value
+            });
+        }
+
+        function updateLiveSize(val) {
+            document.getElementById('widthValue').innerText = val + 'px';
+            if (gameInstance) {
+                gameInstance.setCanvasSize(val, val);
+            }
+        }
+
+        function applyPresetTheme(type) {
+            if (type === 'default') {
+                document.getElementById('themeBgColor').value = '#ffffff';
+                document.getElementById('themeLineColor').value = '#777777';
+                document.getElementById('themeLabelColor').value = '#777777';
+                document.getElementById('themeBorderColor').value = '#777777';
+            } else if (type === 'dark') {
+                document.getElementById('themeBgColor').value = '#1e293b';
+                document.getElementById('themeLineColor').value = '#64748b';
+                document.getElementById('themeLabelColor').value = '#94a3b8';
+                document.getElementById('themeBorderColor').value = '#334155';
+            } else if (type === 'wood') {
+                document.getElementById('themeBgColor').value = '#e0d5c1';
+                document.getElementById('themeLineColor').value = '#004041';
+                document.getElementById('themeLabelColor').value = '#004041';
+                document.getElementById('themeBorderColor').value = '#004041';
+            }
+            updateLiveTheme();
         }
 
         function loadCustomOBX() {
@@ -234,7 +299,6 @@
             document.getElementById('nextMoveOutput').innerText = `Next Move (${turnStr}): ${move}`;
         }
 
-        // Initialize with default capture preset on load
         window.addEventListener('DOMContentLoaded', () => {
             renderBoard(document.getElementById('obxInput').value);
         });
