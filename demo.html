@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math behind Baghchal</title>
+    <style>
+        :root {
+            --primary: rgb(0, 64, 65);
+            --forest-deep: #0a2f1f;
+            --forest-mist: #1e4d3a;
+            --accent-glow: #ffff00;
+            --card-bg: rgba(0, 30, 30, 0.85);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle, var(--forest-mist), var(--forest-deep));
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: var(--accent-glow);
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 24px;
+        }
+
+        p.subtitle {
+            font-size: 13px;
+            color: #cfc;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 700px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--accent-glow);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 8px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        button {
+            background: var(--primary);
+            color: #fff;
+            border: 1px solid var(--accent-glow);
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: var(--accent-glow);
+            color: var(--primary);
+        }
+
+        button.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        button.secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: #fff;
+        }
+
+        .output-box {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px dashed var(--accent-glow);
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            color: var(--accent-glow);
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #boardContainer {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+    <!-- Include Baghchal Library -->
+    <script src="baghchal.js"></script>
+</head>
+
+<body>
+
+    <h1>Math behind Baghchal</h1>
+    <p class="subtitle">Online Baghchal Exchange (OBX) Library Demonstration</p>
+
+    <div class="container">
+        <!-- Control & Configuration Panel -->
+        <div class="card">
+            <div class="card-title">1. OBX Input & Control</div>
+
+            <label style="font-size: 12px;"><strong>Enter or Paste OBX String:</strong></label>
+            <input type="text" id="obxInput" value="TXXXT/XXXXX/XXXXX/XXXXX/TXXXT g @20 c1 -">
+
+            <div class="btn-group">
+                <button onclick="loadCustomOBX()">Render OBX Board</button>
+                <button onclick="calcNextMove()" style="background:#d35400; border-color:#f39c12;">Generate Next
+                    Move</button>
+            </div>
+
+            <div class="card-title" style="margin-top: 10px;">Preset Examples</div>
+            <div class="btn-group">
+                <button class="secondary" onclick="loadPreset('initial')">1. Initial Game State</button>
+                <button class="secondary" onclick="loadPreset('placement')">2. Goat Placement (C3)</button>
+                <button class="secondary" onclick="loadPreset('capture')">3. Tiger Capture (A1 -> C3)</button>
+                <button class="secondary" onclick="loadPreset('trapped')">4. Tigers Trapped</button>
+                <button class="secondary" onclick="loadPreset('invalid')"
+                    style="border-color:#ff4d4d; color:#ff9999;">5. Invalid Pieces Test</button>
+            </div>
+
+            <div class="card-title" style="margin-top: 10px;">2. Next Move Generator Output</div>
+            <div id="nextMoveOutput" class="output-box">Click "Generate Next Move" to calculate</div>
+        </div>
+
+        <!-- Rendered Board Output -->
+        <div class="card">
+            <div class="card-title">3. Canvas Board Output</div>
+            <div id="boardContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        let gameInstance = null;
+
+        const presets = {
+            initial: "TXXXT/XXXXX/XXXXX/XXXXX/TXXXT g @20 c0 -",
+            placement: "TXXXT/XXXXX/XXGXX/XXXXX/TXXXT t @19 c0 mC3",
+            capture: "TXXXT/XGXXX/XXXXX/XXXXX/TXXXT g @19 c0 mA1C3",
+            trapped: "TGGGT/GGGGG/GXGGG/GGGGG/TGGGT t @0 c0 mB3",
+            invalid: "TTTTT/GGGGG/GGGGG/GGGGG/TGGGT g @5 c5 -"
+        };
+
+        function renderBoard(obxStr) {
+            document.getElementById('obxInput').value = obxStr;
+
+            // Re-instantiate Baghchal library in boardContainer
+            if (gameInstance) {
+                gameInstance.destroy();
+            }
+
+            gameInstance = new Baghchal('#boardContainer', obxStr, {
+                width: 340,
+                height: 340,
+                loopCaptureAnimation: true,
+                showStateInfo: true
+            });
+
+            document.getElementById('nextMoveOutput').innerText = 'Click "Generate Next Move" to calculate';
+        }
+
+        function loadCustomOBX() {
+            const val = document.getElementById('obxInput').value;
+            renderBoard(val);
+        }
+
+        function loadPreset(key) {
+            if (presets[key]) {
+                renderBoard(presets[key]);
+            }
+        }
+
+        function calcNextMove() {
+            if (!gameInstance) return;
+            const move = gameInstance.nextMove();
+            const turnStr = gameInstance.state.turn.toUpperCase();
+            document.getElementById('nextMoveOutput').innerText = `Next Move (${turnStr}): ${move}`;
+        }
+
+        // Initialize with default capture preset on load
+        window.addEventListener('DOMContentLoaded', () => {
+            renderBoard(document.getElementById('obxInput').value);
+        });
+    </script>
+</body>
+
+</html>

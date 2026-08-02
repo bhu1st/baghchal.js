@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn Baghchal - Interactive Rules & OBX Tutorial</title>
+    <meta name="description"
+        content="Learn how to play Baghchal (Tigers & Goats) with an interactive OBX notation tutorial, capture rules, and live board animations.">
+    <style>
+        :root {
+            --primary: rgb(0, 64, 65);
+            --forest-deep: #051d14;
+            --forest-mist: #164635;
+            --accent-glow: #ffff00;
+            --gold-accent: #f39c12;
+            --card-bg: rgba(6, 35, 26, 0.85);
+            --border-glow: rgba(255, 255, 0, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at top center, var(--forest-mist), var(--forest-deep));
+            min-height: 100vh;
+            color: #f0f7f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 40px;
+        }
+
+        header {
+            width: 100%;
+            max-width: 960px;
+            padding: 30px 20px 20px 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--accent-glow);
+            font-size: 32px;
+            margin: 0 0 10px 0;
+            letter-spacing: 1px;
+            text-shadow: 0 0 12px rgba(255, 255, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: #a3e6cb;
+            margin: 0 auto;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+
+        /* Progress Steps Bar */
+        .step-nav {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 25px 0;
+            max-width: 900px;
+            width: 90%;
+        }
+
+        .step-btn {
+            background: rgba(0, 64, 65, 0.6);
+            color: #d1f2e4;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 10px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .step-btn:hover {
+            background: var(--primary);
+            border-color: var(--accent-glow);
+            color: #fff;
+        }
+
+        .step-btn.active {
+            background: var(--accent-glow);
+            color: var(--primary);
+            border-color: var(--accent-glow);
+            box-shadow: 0 0 15px rgba(255, 255, 0, 0.4);
+        }
+
+        main {
+            width: 90%;
+            max-width: 960px;
+        }
+
+        .tutorial-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .tutorial-card {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .rule-info {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .rule-tag {
+            align-self: flex-start;
+            background: rgba(255, 255, 0, 0.15);
+            color: var(--accent-glow);
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-glow);
+        }
+
+        .rule-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            margin: 0;
+        }
+
+        .rule-text {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #d1e8df;
+        }
+
+        .obx-badge {
+            background: rgba(0, 0, 0, 0.6);
+            border-left: 3px solid var(--accent-glow);
+            padding: 10px 14px;
+            border-radius: 0 8px 8px 0;
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--accent-glow);
+            word-break: break-all;
+        }
+
+        /* Interactive Examples List */
+        .example-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .example-item {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .example-item.active {
+            border-color: var(--accent-glow);
+            background: rgba(255, 255, 0, 0.08);
+        }
+
+        .example-text {
+            flex: 1;
+            min-width: 170px;
+        }
+
+        .example-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #e0f7ec;
+        }
+
+        .example-obx {
+            font-family: monospace;
+            font-size: 11px;
+            color: var(--accent-glow);
+            margin-top: 3px;
+            word-break: break-all;
+        }
+
+        .see-action-btn {
+            background: rgba(255, 255, 0, 0.15);
+            color: var(--accent-glow);
+            border: 1px solid var(--accent-glow);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .see-action-btn:hover,
+        .see-action-btn.active {
+            background: var(--accent-glow);
+            color: var(--primary);
+            box-shadow: 0 0 10px rgba(255, 255, 0, 0.4);
+        }
+
+        .action-btn {
+            background: var(--gold-accent);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            align-self: flex-start;
+            margin-top: 5px;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            background: #ffa826;
+        }
+
+        .board-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #8abda8;
+        }
+
+        footer a {
+            color: var(--accent-glow);
+            text-decoration: none;
+        }
+    </style>
+    <!-- Include Independent Baghchal Library -->
+    <script src="baghchal.js"></script>
+</head>
+
+<body>
+
+    <header>
+        <h1>Baghchal Interactive Tutorial</h1>
+        <p class="subtitle">Learn the ancient Nepali strategy game of Tigers (🐯) & Goats (🐐) through live board
+            simulations powered by <strong>OBX Notation</strong>.</p>
+
+        <!-- Tutorial Navigation Steps -->
+        <nav class="step-nav" id="stepNav">
+            <button class="step-btn active" id="nav-step1" onclick="showStep(1)">1. Board Setup</button>
+            <button class="step-btn" id="nav-step2" onclick="showStep(2)">2. Goat Placement</button>
+            <button class="step-btn" id="nav-step3" onclick="showStep(3)">3. Tiger Capture Rule</button>
+            <button class="step-btn" id="nav-step4" onclick="showStep(4)">4. Trapping Tigers (Win)</button>
+            <button class="step-btn" id="nav-step5" onclick="showStep(5)">5. Tiger Victory</button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Step 1: Initial Setup -->
+        <section class="tutorial-card" id="step1">
+            <div class="rule-info">
+                <span class="rule-tag">Lesson 1 of 5</span>
+                <h2 class="rule-title">1. Initial Board Setup</h2>
+                <p class="rule-text">
+                    Baghchal is played on a 5×5 grid with 25 line intersections. The game begins with <strong>4 Tigers
+                        (🐯)</strong> placed at the four corners of the board. The Goats start with <strong>20 unplaced
+                        pieces</strong> in reserve.
+                </p>
+                <div class="obx-badge">
+                    <strong>OBX Notation:</strong><br>
+                    TXXXT/XXXXX/XXXXX/XXXXX/TXXXT g @20 c0 -
+                </div>
+                <button class="action-btn" onclick="showStep(2)">Next: Goat Placement →</button>
+            </div>
+            <div class="board-wrapper">
+                <div id="board1"></div>
+            </div>
+        </section>
+
+        <!-- Step 2: Goat Placement -->
+        <section class="tutorial-card" id="step2" style="display: none;">
+            <div class="rule-info">
+                <span class="rule-tag">Lesson 2 of 5 • Click Examples Below</span>
+                <h2 class="rule-title">2. Goat Placement Phase</h2>
+                <p class="rule-text">
+                    The Goat player places 1 goat per turn onto any empty intersection (<code>X</code>). Goats cannot
+                    move until all 20 goats have been placed. Click any OBX example below to see it on the preview
+                    board:
+                </p>
+
+                <!-- 3 Clickable Examples for Goat Placement -->
+                <div class="example-list">
+                    <div class="example-item active">
+                        <div class="example-text">
+                            <div class="example-title">Example 2.1: Place Goat at Center (C3)</div>
+                            <div class="example-obx">TXXXT/XXXXX/XXGXX/XXXXX/TXXXT t @19 c0 mC3</div>
+                        </div>
+                        <button class="see-action-btn active"
+                            onclick="loadExample(2, 'TXXXT/XXXXX/XXGXX/XXXXX/TXXXT t @19 c0 mC3', this)">▶ See it in
+                            Action</button>
+                    </div>
+
+                    <div class="example-item">
+                        <div class="example-text">
+                            <div class="example-title">Example 2.2: Place Goat at Grid B2</div>
+                            <div class="example-obx">TXXXT/XGXXX/XXXXX/XXXXX/TXXXT t @19 c0 mB2</div>
+                        </div>
+                        <button class="see-action-btn"
+                            onclick="loadExample(2, 'TXXXT/XGXXX/XXXXX/XXXXX/TXXXT t @19 c0 mB2', this)">▶ See it in
+                            Action</button>
+                    </div>
+
+                    <div class="example-item">
+                        <div class="example-text">
+                            <div class="example-title">Example 2.3: Place Goat at Grid D4</div>
+                            <div class="example-obx">TXXXT/XXXXX/XXXXX/XXXGX/TXXXT t @19 c0 mD4</div>
+                        </div>
+                        <button class="see-action-btn"
+                            onclick="loadExample(2, 'TXXXT/XXXXX/XXXXX/XXXGX/TXXXT t @19 c0 mD4', this)">▶ See it in
+                            Action</button>
+                    </div>
+                </div>
+
+                <button class="action-btn" onclick="showStep(3)">Next: Tiger Capture Rule →</button>
+            </div>
+            <div class="board-wrapper">
+                <div id="board2"></div>
+            </div>
+        </section>
+
+        <!-- Step 3: Tiger Capture Rule -->
+        <section class="tutorial-card" id="step3" style="display: none;">
+            <div class="rule-info">
+                <span class="rule-tag">Lesson 3 of 5 • Core Mechanics</span>
+                <h2 class="rule-title">3. Tiger Capture Rule (The Jump)</h2>
+                <p class="rule-text">
+                    A Tiger captures (eats) a Goat by jumping over an adjacent Goat along a drawn line into an empty
+                    space behind it! Click any example to see the live particle explosion animation on the captured
+                    node:
+                </p>
+
+                <!-- 3 Clickable Examples for Tiger Capture -->
+                <div class="example-list">
+                    <div class="example-item active">
+                        <div class="example-text">
+                            <div class="example-title">Example 3.1: Tiger A1 eats Goat at B2 (lands C3)</div>
+                            <div class="example-obx">TXXXT/XGXXX/XXXXX/XXXXX/TXXXT g @19 c1 mA1C3</div>
+                        </div>
+                        <button class="see-action-btn active"
+                            onclick="loadExample(3, 'TXXXT/XGXXX/XXXXX/XXXXX/TXXXT g @19 c1 mA1C3', this)">▶ See it in
+                            Action</button>
+                    </div>
+
+                    <div class="example-item">
+                        <div class="example-text">
+                            <div class="example-title">Example 3.2: Tiger E1 eats Goat at D2 (lands C1)</div>
+                            <div class="example-obx">TXXXT/XXXGX/XXXXX/XXXXX/TXXXT g @19 c1 mE1C1</div>
+                        </div>
+                        <button class="see-action-btn"
+                            onclick="loadExample(3, 'TXXXT/XXXGX/XXXXX/XXXXX/TXXXT g @19 c1 mE1C1', this)">▶ See it in
+                            Action</button>
+                    </div>
+
+                    <div class="example-item">
+                        <div class="example-text">
+                            <div class="example-title">Example 3.3: Tiger A5 eats Goat at B4 (lands C3)</div>
+                            <div class="example-obx">TXXXT/XXXXX/XXXXX/XGXXX/TXXXT g @19 c1 mA5C3</div>
+                        </div>
+                        <button class="see-action-btn"
+                            onclick="loadExample(3, 'TXXXT/XXXXX/XXXXX/XGXXX/TXXXT g @19 c1 mA5C3', this)">▶ See it in
+                            Action</button>
+                    </div>
+                </div>
+
+                <button class="action-btn" onclick="showStep(4)">Next: Trapping Tigers →</button>
+            </div>
+            <div class="board-wrapper">
+                <div id="board3"></div>
+            </div>
+        </section>
+
+        <!-- Step 4: Trapping Tigers (Goat Victory) -->
+        <section class="tutorial-card" id="step4" style="display: none;">
+            <div class="rule-info">
+                <span class="rule-tag">Lesson 4 of 5 • Goat Victory</span>
+                <h2 class="rule-title">4. Trapping Tigers (Goat Win)</h2>
+                <p class="rule-text">
+                    Once all 20 goats are placed, goats can slide to adjacent connected points. The <strong>Goats
+                        win</strong> by completely surrounding all 4 Tigers so that no tiger has any legal move or jump
+                    available!
+                </p>
+                <div class="obx-badge">
+                    <strong>OBX Notation (All 4 Tigers Trapped):</strong><br>
+                    TGGGT/GGGGG/GXGGG/GGGGG/TGGGT t @0 c0 mB3
+                </div>
+                <button class="action-btn" onclick="showStep(5)">Next: Tiger Victory →</button>
+            </div>
+            <div class="board-wrapper">
+                <div id="board4"></div>
+            </div>
+        </section>
+
+        <!-- Step 5: Tiger Victory Condition -->
+        <section class="tutorial-card" id="step5" style="display: none;">
+            <div class="rule-info">
+                <span class="rule-tag">Lesson 5 of 5 • Tiger Victory</span>
+                <h2 class="rule-title">5. Tiger Victory Condition</h2>
+                <p class="rule-text">
+                    The <strong>Tigers win</strong> if they manage to capture (eat) <strong>5 Goats</strong> before
+                    being trapped by the goats.
+                </p>
+                <div class="obx-badge">
+                    <strong>OBX Notation (5 Goats Captured):</strong><br>
+                    TXXXT/XXGXX/XXXXX/XXXXX/TXXXT g @15 c5 mA1C3
+                </div>
+                <button class="action-btn" onclick="showStep(1)">↺ Restart Tutorial</button>
+            </div>
+            <div class="board-wrapper">
+                <div id="board5"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        Standard OBX Notation & Engine based on <a href="https://github.com/bhu1st/obx" target="_blank">bhu1st/obx</a> •
+        Powered by Baghchal.js
+    </footer>
+
+    <script>
+        const stepOBX = {
+            1: "TXXXT/XXXXX/XXXXX/XXXXX/TXXXT g @20 c0 -",
+            2: "TXXXT/XXXXX/XXGXX/XXXXX/TXXXT t @19 c0 mC3",
+            3: "TXXXT/XGXXX/XXXXX/XXXXX/TXXXT g @19 c1 mA1C3",
+            4: "TGGGT/GGGGG/GXGGG/GGGGG/TGGGT t @0 c0 mB3",
+            5: "TXXXT/XXGXX/XXXXX/XXXXX/TXXXT g @15 c5 mA1C3"
+        };
+
+        const instances = {};
+
+        function showStep(stepNumber) {
+            // Hide all steps
+            for (let i = 1; i <= 5; i++) {
+                const sec = document.getElementById(`step${i}`);
+                const btn = document.getElementById(`nav-step${i}`);
+                if (sec) sec.style.display = 'none';
+                if (btn) btn.classList.remove('active');
+            }
+
+            // Show selected step
+            const currentSec = document.getElementById(`step${stepNumber}`);
+            const currentBtn = document.getElementById(`nav-step${stepNumber}`);
+            if (currentSec) currentSec.style.display = 'grid';
+            if (currentBtn) currentBtn.classList.add('active');
+
+            // Render/Refresh Baghchal Board Instance for this step
+            if (!instances[stepNumber]) {
+                instances[stepNumber] = new Baghchal(`#board${stepNumber}`, stepOBX[stepNumber], {
+                    width: 320,
+                    height: 320,
+                    loopCaptureAnimation: true,
+                    showStateInfo: true
+                });
+            } else {
+                instances[stepNumber].setObx(stepOBX[stepNumber]);
+            }
+        }
+
+        function loadExample(stepNumber, obxString, btnEl) {
+            showStep(stepNumber);
+
+            if (instances[stepNumber]) {
+                instances[stepNumber].setObx(obxString);
+            }
+
+            if (btnEl) {
+                const list = btnEl.closest('.example-list');
+                if (list) {
+                    list.querySelectorAll('.see-action-btn').forEach(b => b.classList.remove('active'));
+                    list.querySelectorAll('.example-item').forEach(item => item.classList.remove('active'));
+                    btnEl.classList.add('active');
+                    if (btnEl.closest('.example-item')) {
+                        btnEl.closest('.example-item').classList.add('active');
+                    }
+                }
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            showStep(1);
+        });
+    </script>
+</body>
+
+</html>

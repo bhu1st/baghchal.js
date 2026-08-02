@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Math behind Baghchal</title>
+    <style>
+        :root {
+            --primary: rgb(0, 64, 65);
+            --forest-deep: #004041;
+            --forest-mist: #63ffff;
+            --accent-glow: #ffff00;
+            --modal-bg: rgba(0, 30, 30, 0.95);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: radial-gradient(circle, var(--forest-mist), var(--forest-deep));
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            color: #fff;
+            user-select: none;
+        }
+
+        .app-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-evenly;
+            padding: 10px;
+        }
+
+        .top-bar {
+            display: flex;
+            width: 92vw;
+            max-width: 380px;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .timer-unit {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 4px 10px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-family: monospace;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        canvas {
+            background: #e0d5c1;
+            border: 4px solid var(--primary);
+            border-radius: 8px;
+            width: 92vw;
+            height: 92vw;
+            max-width: 380px;
+            max-height: 380px;
+            touch-action: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .status-row {
+            display: flex;
+            width: 92vw;
+            max-width: 380px;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--modal-bg);
+            border: 2px solid var(--accent-glow);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 350px;
+            padding: 20px;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--accent-glow);
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        th {
+            text-align: left;
+            padding: 6px;
+            color: var(--accent-glow);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        td {
+            padding: 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .close-btn {
+            background: var(--accent-glow);
+            color: var(--primary);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-top: 15px;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        footer {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.4);
+            font-size: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body onclick="startAudioContext()">
+
+    <div class="app-content">
+        <div class="top-bar">
+            <div style="display: flex; gap: 5px;">
+                <div class="timer-unit">🕒 🐐 <span id="goatTotal">00:00</span></div>
+                <div class="timer-unit">🕒 🐯 <span id="tigerTotal">00:00</span></div>
+            </div>
+            <div onclick="openHistory()" style="font-size: 24px; cursor: pointer;">📜</div>
+        </div>
+
+        <div class="status-row">
+            <div style="display: flex; gap: 10px;">
+                <label style="cursor:pointer;"><input type="radio" name="mode" value="single" checked
+                        onchange="resetGame()"> VS TIGER</label>
+                <label style="cursor:pointer;"><input type="radio" name="mode" value="multi" onchange="resetGame()"> VS
+                    FRIEND</label>
+            </div>
+            <div id="turnDisplay"
+                style="color: var(--accent-glow); background: rgba(0,0,0,0.3); padding: 5px 12px; border-radius: 10px;">
+                Turn: 🐐</div>
+        </div>
+
+        <canvas id="board" width="400" height="400"></canvas>
+
+        <div id="obxDisplay"
+            style="width: 92vw; max-width: 380px; text-align: center; font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.5); color: var(--accent-glow); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); word-break: break-all;">
+            OBX: TXXX T/XXXXX/XXXXX/XXXXX/TXXXT g @20 c0 -
+        </div>
+
+        <div style="display: flex; width: 92vw; max-width: 380px; gap: 10px;">
+            <div
+                style="background: var(--primary); border-radius: 6px; padding: 4px 12px; display: flex; align-items: center; gap: 8px;">
+                <span>🐐</span>
+                <div id="goatHouse" style="color:var(--accent-glow); font-size:18px;"></div>
+            </div>
+            <div
+                style="background: var(--primary); border-radius: 6px; padding: 4px 12px; display: flex; align-items: center; gap: 8px;">
+                <span>🥩</span>
+                <div id="tigerDen" style="color:var(--accent-glow); font-size:18px;"></div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <div id="modalOverlay" class="modal">
+        <div class="modal-content">
+            <div id="modalHeader" class="modal-header">History</div>
+            <div id="modalBody"></div>
+            <button id="modalActionBtn" class="close-btn" onclick="closeModal()">CLOSE</button>
+        </div>
+    </div>
+
+    <footer>
+        <span>Powered by github.com/bhu1st/obx</span>
+        <span>Inspired by Baghchal.net</span>
+    </footer>
+
+    <script>
+        let turn, goatsPlaced, goatsCaptured, selectedIdx, points, mode, gameOver, audioCtx;
+        let goatTime = 0, tigerTime = 0, timerInterval, moveCount = 0;
+        let lastMoveNotation = "-";
+        let anims = [], particles = [];
+
+        const canvas = document.getElementById("board");
+        const ctx = canvas.getContext("2d");
+
+        function startAudioContext() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playStepSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(160, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+            gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.1);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(now + 0.1);
+        }
+
+        function playCaptureSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.5);
+            gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.5);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(now + 0.5);
+        }
+
+        function triggerBite(x, y, angle) {
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            anims.push({ type: 'side_bite', x: x, y: y, angle: angle, start: performance.now(), duration: 550 });
+            for (let i = 0; i < 35; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10,
+                    life: 1.0, color: 'rgba(230, 0, 0, '
+                });
+            }
+        }
+
+        function openHistory() {
+            const history = JSON.parse(localStorage.getItem('bg_history') || "[]");
+            document.getElementById('modalHeader').innerText = "Last 10 Games";
+            let html = `<table><tr><th>Mode</th><th>Winner</th><th>Time</th><th>Moves</th></tr>`;
+            history.slice(-10).reverse().forEach(g => {
+                html += `<tr><td>${g.m}</td><td>${g.w}</td><td>${g.t}</td><td>${g.mv || '-'}</td></tr>`;
+            });
+            if (history.length === 0) html += `<tr><td colspan="4" style="text-align:center">No records</td></tr>`;
+            html += `</table>`;
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('modalActionBtn').innerText = "CLOSE";
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
+
+
+
+        function showWinnerPopup(winner) {
+            const timeTotal = formatTime(goatTime + tigerTime);
+            document.getElementById('modalHeader').innerText = "GAME OVER";
+            document.getElementById('modalBody').innerHTML = `
+        <div style="text-align:center;">
+            <h2 style="color:var(--accent-glow); margin:5px 0;">${winner}</h2>
+            <p>Duration: ${timeTotal}</p>
+            <p>Total Moves: ${moveCount}</p>
+        </div>`;
+            document.getElementById('modalActionBtn').innerText = "PLAY AGAIN";
+            document.getElementById('modalActionBtn').onclick = () => { closeModal(); resetGame(); };
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; document.getElementById('modalActionBtn').onclick = closeModal; }
+
+        function saveGameResult(winner) {
+            let history = JSON.parse(localStorage.getItem('bg_history') || "[]");
+            history.push({ m: 'CLASSIC', w: winner, t: formatTime(goatTime + tigerTime), mv: moveCount });
+            localStorage.setItem('bg_history', JSON.stringify(history));
+        }
+
+        function getMoveNotation(idx) {
+            const cols = ["A", "B", "C", "D", "E"];
+            return cols[idx % 5] + (Math.floor(idx / 5) + 1);
+        }
+
+        function getObx() {
+            let boardStr = "";
+            for (let i = 0; i < 25; i++) {
+                if (points[i].piece === "tiger") boardStr += "T";
+                else if (points[i].piece === "goat") boardStr += "G";
+                else boardStr += "X";
+                if (i % 5 === 4 && i !== 24) boardStr += "/";
+            }
+            const turnStr = turn === "goat" ? "g" : "t";
+            const goatsToPlace = 20 - goatsPlaced;
+            return `${boardStr} ${turnStr} @${goatsToPlace} c${goatsCaptured} ${lastMoveNotation}`;
+        }
+
+        function resetGame() {
+            turn = "goat"; goatsPlaced = 0; goatsCaptured = 0; selectedIdx = null; gameOver = false;
+            goatTime = 0; tigerTime = 0; moveCount = 0; lastMoveNotation = "-";
+            mode = document.querySelector('input[name="mode"]:checked').value;
+            points = [];
+            for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) points.push({ x: 40 + x * 80, y: 40 + y * 80, piece: null, r: y, c: x, highlight: false });
+            [0, 4, 20, 24].forEach(i => points[i].piece = "tiger");
+            updateUI(); startTimers(); requestAnimationFrame(renderLoop);
+        }
+
+        function isConnected(i, j) {
+            const p1 = points[i], p2 = points[j];
+            const dr = Math.abs(p1.r - p2.r), dc = Math.abs(p1.c - p2.c);
+            if (dr > 1 || dc > 1) return false;
+            return (dr + dc === 1) || (dr === 1 && dc === 1 && (p1.r + p1.c) % 2 === 0);
+        }
+
+        function getJump(tIdx, targetIdx) {
+            const p1 = points[tIdx], p2 = points[targetIdx];
+            const dr = p2.r - p1.r, dc = p2.c - p1.c;
+            if ((Math.abs(dr) === 2 && dc === 0) || (Math.abs(dc) === 2 && dr === 0) || (Math.abs(dr) === 2 && Math.abs(dc) === 2 && (p1.r + p1.c) % 2 === 0)) {
+                return points.findIndex(p => p.r === (p1.r + dr / 2) && p.c === (p1.c + dc / 2));
+            }
+            return -1;
+        }
+
+        function getAllLegalMoves(pType) {
+            let moves = [];
+            points.forEach((p, i) => {
+                if (p.piece === pType) {
+                    points.forEach((_, j) => {
+                        if (!points[j].piece) {
+                            if (pType === "tiger") {
+                                let mid = getJump(i, j);
+                                if (mid !== -1 && points[mid].piece === "goat") moves.push({ f: i, t: j, c: mid });
+                                if (isConnected(i, j)) moves.push({ f: i, t: j, c: -1 });
+                            } else if (goatsPlaced >= 20 && isConnected(i, j)) {
+                                moves.push({ f: i, t: j, c: -1 });
+                            }
+                        }
+                    });
+                }
+            });
+            return moves;
+        }
+
+        function movePiece(fromIdx, toIdx, midIdx) {
+            const pType = points[fromIdx].piece;
+            moveCount++;
+            lastMoveNotation = "m" + getMoveNotation(fromIdx) + getMoveNotation(toIdx);
+            anims.push({ type: 'slide', p: pType, sx: points[fromIdx].x, sy: points[fromIdx].y, ex: points[toIdx].x, ey: points[toIdx].y, start: performance.now(), duration: 200 });
+
+            let jumpAngle = 0;
+            if (midIdx !== -1) {
+                jumpAngle = Math.atan2(points[toIdx].y - points[fromIdx].y, points[toIdx].x - points[fromIdx].x);
+            }
+
+            points[fromIdx].piece = null;
+            setTimeout(() => {
+                points[toIdx].piece = pType;
+                if (midIdx !== -1 && points[midIdx].piece === "goat") {
+                    triggerBite(points[midIdx].x, points[midIdx].y, jumpAngle);
+                    points[midIdx].piece = null; goatsCaptured++; playCaptureSound();
+                } else playStepSound();
+                endTurn();
+            }, 200);
+        }
+
+        function aiMove() {
+            if (gameOver || turn !== 'tiger') return;
+            const moves = getAllLegalMoves("tiger");
+            if (moves.length === 0) return;
+            let captures = moves.filter(m => m.c !== -1);
+            let bestMove = captures.length > 0 ? captures[Math.floor(Math.random() * captures.length)] : null;
+            if (!bestMove) {
+                moves.sort((a, b) => Math.hypot(points[a.t].r - 2, points[a.t].c - 2) - Math.hypot(points[b.t].r - 2, points[b.t].c - 2));
+                bestMove = moves[0];
+            }
+            movePiece(bestMove.f, bestMove.t, bestMove.c);
+        }
+
+        function handleInput(e) {
+            startAudioContext();
+            if (gameOver || (mode === 'single' && turn === 'tiger') || anims.length > 0) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = ((e.clientX || (e.touches && e.touches[0].clientX)) - rect.left) * (400 / rect.width);
+            const y = ((e.clientY || (e.touches && e.touches[0].clientY)) - rect.top) * (400 / rect.height);
+            const idx = points.findIndex(p => Math.hypot(p.x - x, p.y - y) < 30);
+            if (idx === -1) return;
+            if (turn === "goat" && goatsPlaced < 20) {
+                if (!points[idx].piece) { points[idx].piece = "goat"; goatsPlaced++; moveCount++; lastMoveNotation = "m" + getMoveNotation(idx); playStepSound(); endTurn(); }
+            } else if (selectedIdx === null) {
+                if (points[idx].piece === turn) { selectedIdx = idx; highlightMoves(idx); }
+            } else {
+                if (points[idx].highlight) movePiece(selectedIdx, idx, getJump(selectedIdx, idx));
+                else { selectedIdx = null; highlightMoves(null); }
+            }
+        }
+
+        function highlightMoves(idx) {
+            points.forEach(p => p.highlight = false);
+            if (idx === null) return;
+            points.forEach((p, t) => {
+                if (!p.piece && (isConnected(idx, t) || (points[idx].piece === "tiger" && getJump(idx, t) !== -1 && points[getJump(idx, t)].piece === "goat"))) p.highlight = true;
+            });
+        }
+
+        function endTurn() {
+            selectedIdx = null; highlightMoves(null);
+            if (checkWin()) return;
+            turn = turn === "goat" ? "tiger" : "goat";
+            updateUI();
+            if (turn === "tiger" && mode === "single") setTimeout(aiMove, 600);
+        }
+
+        function checkWin() {
+            if (goatsCaptured >= 5) { saveGameResult("Tiger 🐯"); gameOver = true; showWinnerPopup("Tiger 🐯 wins!"); return true; }
+            if (getAllLegalMoves("tiger").length === 0) { saveGameResult("Goat 🐐"); gameOver = true; showWinnerPopup("Goat 🐐 wins!"); return true; }
+            return false;
+        }
+
+        function updateUI() {
+            document.getElementById('goatHouse').innerText = (20 - goatsPlaced);
+            document.getElementById('tigerDen').innerText = goatsCaptured;
+            document.getElementById('turnDisplay').innerText = "Turn: " + (turn === "goat" ? "🐐" : "🐯");
+            const obxEl = document.getElementById('obxDisplay');
+            if (obxEl) obxEl.innerText = "OBX: " + getObx();
+        }
+
+        function renderLoop() {
+            ctx.globalAlpha = 1.0; ctx.fillStyle = "#e0d5c1"; ctx.fillRect(0, 0, 400, 400);
+            ctx.strokeStyle = "rgba(0, 64, 65, 0.8)"; ctx.lineWidth = 2;
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath(); ctx.moveTo(40, 40 + i * 80); ctx.lineTo(360, 40 + i * 80); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(40 + i * 80, 40); ctx.lineTo(40 + i * 80, 360); ctx.stroke();
+            }
+            ctx.beginPath(); ctx.moveTo(40, 40); ctx.lineTo(360, 360); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(360, 40); ctx.lineTo(40, 360); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(200, 40); ctx.lineTo(360, 200); ctx.lineTo(200, 360); ctx.lineTo(40, 200); ctx.closePath(); ctx.stroke();
+
+            points.forEach((p, i) => {
+                ctx.fillStyle = "rgb(0, 64, 65)";
+                ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
+                if (p.highlight === true && p.piece === null) {
+                    ctx.fillStyle = "rgba(255, 255, 0, 0.8)"; ctx.beginPath(); ctx.arc(p.x, p.y, 22, 0, Math.PI * 2); ctx.fill();
+                }
+                if (p.piece) {
+                    ctx.font = "38px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                    ctx.fillText(p.piece === "tiger" ? "🐯" : "🐐", p.x, p.y);
+                    if (i === selectedIdx) { ctx.strokeStyle = "red"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(p.x, p.y, 25, 0, Math.PI * 2); ctx.stroke(); }
+                }
+            });
+
+            let now = performance.now();
+            for (let i = anims.length - 1; i >= 0; i--) {
+                let a = anims[i]; let progress = (now - a.start) / a.duration;
+                if (progress >= 1) anims.splice(i, 1);
+                else {
+                    if (a.type === 'slide') {
+                        let cx = a.sx + (a.ex - a.sx) * progress; let cy = a.sy + (a.ey - a.sy) * progress;
+                        ctx.fillText(a.p === "tiger" ? "🐯" : "🐐", cx, cy);
+                    } else if (a.type === 'side_bite') {
+                        let snap = Math.sin(progress * Math.PI);
+                        let offset = -70 + (progress * 70);
+                        let headX = a.x + Math.cos(a.angle) * offset;
+                        let headY = a.y + Math.sin(a.angle) * offset;
+                        ctx.fillText("🐐", a.x, a.y);
+                    }
+                }
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 0.035;
+                if (p.life <= 0) particles.splice(i, 1);
+                else { ctx.fillStyle = p.color + p.life + ')'; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill(); }
+            }
+            if (!gameOver) requestAnimationFrame(renderLoop);
+        }
+
+        function startTimers() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!gameOver) {
+                    if (turn === 'goat') goatTime++; else tigerTime++;
+                    document.getElementById('goatTotal').innerText = formatTime(goatTime);
+                    document.getElementById('tigerTotal').innerText = formatTime(tigerTime);
+                }
+            }, 1000);
+        }
+
+        function formatTime(s) { const m = Math.floor(s / 60); const sc = s % 60; return (m < 10 ? '0' : '') + m + ':' + (sc < 10 ? '0' : '') + sc; }
+        canvas.addEventListener("touchstart", (e) => { e.preventDefault(); handleInput(e); });
+        canvas.addEventListener("mousedown", handleInput);
+        resetGame();
+    </script>
+</body>
+
+</html>
