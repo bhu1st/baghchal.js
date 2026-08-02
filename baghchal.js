@@ -433,6 +433,15 @@
             return generateNextMove(this.state);
         }
 
+        parseObxMove(obxString) {
+            this.setObx(obxString);
+            return this.state;
+        }
+
+        getBoard() {
+            return this.state;
+        }
+
         destroy() {
             this.isDestroyed = true;
             this.container.innerHTML = "";

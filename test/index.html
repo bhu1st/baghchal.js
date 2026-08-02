@@ -5,38 +5,96 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Baghchal Test Page</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #ffffff;
+            color: #212529;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: rgb(0, 64, 65);
+            margin: 0 0 20px 0;
+            font-size: 26px;
+        }
+
+        #boardContainer {
+            margin-top: 10px;
+            width: 100%;
+            max-width: 380px;
+        }
+
+        .log-box {
+            background: #f8f9fa;
+            border: 1px solid #ced4da;
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #212529;
+            max-width: 380px;
+            width: 100%;
+            margin-top: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            box-sizing: border-box;
+        }
+    </style>
     <script src="../baghchal.js"></script>
 </head>
 
 <body>
-    <h1>Baghchal Test Page</h1>
+    <h1>Baghchal OBX Test Page</h1>
 
-    <div id="board"></div>
+    <div id="boardContainer"></div>
+
+    <div class="log-box" id="logBox">Testing OBX rendering...</div>
 
     <script>
-        // Test OBX moves
+        // Test OBX strings
         const obxMoves = [
-            "mB3C2",
-            "TXXXT/XGXXX/XXXXX/XXXXX/TXXXT g @2 c1 mA3B2"
+            "TXXXT/XGXXX/XXXXX/XXXXX/TXXXT g @19 c1 mA1C3"
         ];
 
+        const logEl = document.getElementById('logBox');
+
         obxMoves.forEach(move => {
-            console.log(`Testing move: ${move}`);
+            console.log(`Testing move/OBX: ${move}`);
 
-            // Create a new board instance
-            const board = new Baghchal('#board');
-
-            // Parse and apply move
             try {
+                // Initialize board instance with test container
+                const board = new Baghchal('#boardContainer', move, {
+                    width: 360,
+                    loopCaptureAnimation: true,
+                    showStateInfo: true
+                });
+
+                // Apply/parse OBX move
                 board.parseObxMove(move);
                 console.log("✅ Move applied successfully");
-            } catch (error) {
-                console.error("❌ Error applying move:", error.message);
-            }
 
-            // Get the board state
-            const boardState = board.getBoard();
-            console.log("Board state:", boardState);
+                // Get state & calculate next move
+                const boardState = board.getBoard();
+                const nextMove = board.nextMove();
+                console.log("Board state:", boardState);
+
+                logEl.innerHTML = `
+                    <div style="color: #198754; font-weight: bold;">✅ OBX Parsed & Rendered Successfully!</div>
+                    <div style="margin-top:6px;"><strong>Raw OBX:</strong> ${boardState.rawOBX}</div>
+                    <div><strong>Turn:</strong> ${boardState.turn} | <strong>Tigers:</strong> ${boardState.tigerCount}</div>
+                    <div><strong>Unplaced Goats:</strong> ${boardState.goatsToPlace} | <strong>Captured:</strong> ${boardState.capturedGoats}</div>
+                    <div style="margin-top:6px; color: #d35400; font-weight: bold;"><strong>Generated Next Move:</strong> ${nextMove}</div>
+                `;
+            } catch (error) {
+                console.error("❌ Error applying move:", error);
+                logEl.innerHTML = `<div style="color:#dc3545; font-weight: bold;">❌ Error applying move: ${error.message}</div>`;
+            }
         });
     </script>
 </body>
