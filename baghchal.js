@@ -235,7 +235,7 @@
         bagh: "",                    // Custom tiger image URL/path or Image element
         goat: "",                    // Custom goat image URL/path or Image element
         gridSize: 5,                 // Grid size (5x5)
-        canvasPadding: 12,            // Padding around canvas outer frame
+        canvasPadding: 12,           // Padding around canvas outer frame
         framePadding: 24,            // Padding between outer frame and inner frame (where A-E, 1-5 labels sit)
         boardPadding: 32,            // Margin inside inner frame surrounding board grid lines
         lineColor: "#777777",        // Grid & diagonal line color (default #777777)
@@ -247,6 +247,11 @@
         frameLineWidth: 3,           // Outer/inner frame line thickness
         lineWidth: 2,                // Grid line thickness
         pieceRadiusRatio: 0.08,      // Empty point dot radius ratio relative to cellSize
+        selectionColor: "#ff0000",   // Default selection ring/box color
+        stopColor: "#ff0000",        // Start position of move color (red ring/box)
+        lookColor: "#ffff00",        // Active piece selection color (yellow ring/box)
+        goColor: "#00ff00",          // Move destination position color (green ring/box)
+        selectionLineWidth: 2,       // Selection ring line thickness
         tigerEmoji: "🐯",            // Default tiger emoji if no custom image sprite
         goatEmoji: "🐐",             // Default goat emoji if no custom image sprite
         showGridLabels: true,        // Toggle for drawing grid indexes
@@ -281,6 +286,11 @@
             if (options.bagh !== undefined) this.theme.bagh = options.bagh;
             if (options.goat !== undefined) this.theme.goat = options.goat;
             if (options.labelColor !== undefined) this.theme.labelColor = options.labelColor;
+            if (options.selectionColor !== undefined) this.theme.selectionColor = options.selectionColor;
+            if (options.stopColor !== undefined) this.theme.stopColor = options.stopColor;
+            if (options.lookColor !== undefined) this.theme.lookColor = options.lookColor;
+            if (options.goColor !== undefined) this.theme.goColor = options.goColor;
+            if (options.selectionLineWidth !== undefined) this.theme.selectionLineWidth = options.selectionLineWidth;
 
             this.anims = [];
             this.particles = [];
@@ -445,6 +455,16 @@
             }
         }
 
+        drawSelection(startX, startY, size, color) {
+            const ctx = this.ctx;
+            const boxSize = size / 1.8;
+            const x = startX - boxSize / 2;
+            const y = startY - boxSize / 2;
+            ctx.strokeStyle = color || this.theme.selectionColor || "#ff0000";
+            ctx.lineWidth = this.theme.selectionLineWidth || 2;
+            ctx.strokeRect(x, y, boxSize, boxSize);
+        }
+
         drawMarkers(boardStartX, boardStartY, cellSize, boardSize, innerFrameStartX, innerFrameStartY, innerFrameSize) {
             const ctx = this.ctx;
             ctx.fillStyle = this.theme.labelColor || "#777777";
@@ -565,19 +585,46 @@
             ctx.closePath();
             ctx.stroke();
 
-            // Draw Grid Index Markers (A-E top, 1-5 left & right)
+            // Draw Grid Index Markers (A-E top & bottom, 1-5 left & right)
             if (this.theme.showGridLabels !== false) {
                 this.drawMarkers(boardStartX, boardStartY, cellSize, boardSize, innerFrameStartX, innerFrameStartY, innerFrameSize);
             }
 
-            // Draw Points and Game Pieces
+            // Determine last move indices for automatic stop (start) and go (destination) position rings
+            let stopIdx = -1;
+            let goIdx = -1;
+
+            if (this.state && this.state.lastMove) {
+                let rawMove = this.state.lastMove.startsWith("m") ? this.state.lastMove.substring(1) : this.state.lastMove;
+                if (rawMove.length === 4) {
+                    stopIdx = coordToIndex(rawMove.substring(0, 2));
+                    goIdx = coordToIndex(rawMove.substring(2, 4));
+                } else if (rawMove.length === 2) {
+                    goIdx = coordToIndex(rawMove);
+                }
+            }
+
+            // Draw Points, Move Selection Rings, and Game Pieces
             const points = this.state.points;
-            points.forEach((p) => {
+            points.forEach((p, i) => {
                 const px = boardStartX + p.c * cellSize;
                 const py = boardStartY + p.r * cellSize;
 
                 p.x = px;
                 p.y = py;
+
+                // Render Selection & Move Highlights (stopColor, goColor, lookColor, selectionColor)
+                if (p.selectionColor) {
+                    this.drawSelection(px, py, cellSize, p.selectionColor);
+                } else if (p.highlight === "stop" || (i === stopIdx && stopIdx !== -1)) {
+                    this.drawSelection(px, py, cellSize, this.theme.stopColor);
+                } else if (p.highlight === "go" || (i === goIdx && goIdx !== -1)) {
+                    this.drawSelection(px, py, cellSize, this.theme.goColor);
+                } else if (p.highlight === "look" || p.selected) {
+                    this.drawSelection(px, py, cellSize, this.theme.lookColor);
+                } else if (p.highlight) {
+                    this.drawSelection(px, py, cellSize, this.theme.selectionColor);
+                }
 
                 if (p.piece) {
                     if (p.piece === "tiger") {
@@ -585,7 +632,7 @@
                             const pieceSize = cellSize * 0.75;
                             ctx.drawImage(this.baghImg, px - pieceSize / 2, py - pieceSize / 2, pieceSize, pieceSize);
                         } else {
-                            ctx.font = `${Math.round(cellSize * 0.55)}px Arial`;
+                            ctx.font = `${Math.round(cellSize * 0.44)}px Arial`;
                             ctx.textAlign = "center";
                             ctx.textBaseline = "middle";
                             ctx.fillText(this.theme.tigerEmoji || "🐯", px, py);
@@ -595,7 +642,7 @@
                             const pieceSize = cellSize * 0.75;
                             ctx.drawImage(this.goatImg, px - pieceSize / 2, py - pieceSize / 2, pieceSize, pieceSize);
                         } else {
-                            ctx.font = `${Math.round(cellSize * 0.55)}px Arial`;
+                            ctx.font = `${Math.round(cellSize * 0.44)}px Arial`;
                             ctx.textAlign = "center";
                             ctx.textBaseline = "middle";
                             ctx.fillText(this.theme.goatEmoji || "🐐", px, py);
