@@ -87,8 +87,8 @@
                 else if (char === "G" || char === "g") { piece = "goat"; goatOnBoardCount++; }
 
                 points.push({
-                    x: 40 + c * 80,
-                    y: 40 + r * 80,
+                    x: 50 + c * 80,
+                    y: 50 + r * 80,
                     piece: piece,
                     r: r,
                     c: c,
@@ -263,8 +263,8 @@
 
             // Canvas Element
             this.canvas = document.createElement("canvas");
-            this.canvas.width = 400;
-            this.canvas.height = 400;
+            this.canvas.width = 420;
+            this.canvas.height = 420;
             this.canvas.style.width = "100%";
             this.canvas.style.maxWidth = this.options.width + "px";
             this.canvas.style.height = "auto";
@@ -347,18 +347,38 @@
             // Clear Background
             ctx.globalAlpha = 1.0;
             ctx.fillStyle = "#e0d5c1";
-            ctx.fillRect(0, 0, 400, 400);
+            ctx.fillRect(0, 0, 420, 420);
 
             // Draw Board Grid
             ctx.strokeStyle = "rgba(0, 64, 65, 0.8)";
             ctx.lineWidth = 2;
             for (let i = 0; i < 5; i++) {
-                ctx.beginPath(); ctx.moveTo(40, 40 + i * 80); ctx.lineTo(360, 40 + i * 80); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(40 + i * 80, 40); ctx.lineTo(40 + i * 80, 360); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(50, 50 + i * 80); ctx.lineTo(370, 50 + i * 80); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(50 + i * 80, 50); ctx.lineTo(50 + i * 80, 370); ctx.stroke();
             }
-            ctx.beginPath(); ctx.moveTo(40, 40); ctx.lineTo(360, 360); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(360, 40); ctx.lineTo(40, 360); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(200, 40); ctx.lineTo(360, 200); ctx.lineTo(200, 360); ctx.lineTo(40, 200); ctx.closePath(); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(50, 50); ctx.lineTo(370, 370); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(370, 50); ctx.lineTo(50, 370); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(210, 50); ctx.lineTo(370, 210); ctx.lineTo(210, 370); ctx.lineTo(50, 210); ctx.closePath(); ctx.stroke();
+
+            // Draw Grid Labels (ABCDE horizontally, 12345 vertically)
+            ctx.font = "bold 13px 'Segoe UI', monospace";
+            ctx.fillStyle = "rgba(0, 64, 65, 0.85)";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            const cols = ["A", "B", "C", "D", "E"];
+            cols.forEach((col, i) => {
+                const x = 50 + i * 80;
+                ctx.fillText(col, x, 20);   // Top
+                ctx.fillText(col, x, 400);  // Bottom
+            });
+
+            const rows = ["1", "2", "3", "4", "5"];
+            rows.forEach((row, i) => {
+                const y = 50 + i * 80;
+                ctx.fillText(row, 20, y);   // Left
+                ctx.fillText(row, 400, y);  // Right
+            });
 
             // Draw Points and Pieces
             const points = this.state.points;
@@ -379,27 +399,6 @@
                 if (now - this.lastLoopBiteTime > 1000) {
                     this.lastLoopBiteTime = now;
                     this.triggerCaptureExplosion(this.state.captureMoveDetails);
-                }
-            }
-
-            // Draw Bite Animations
-            for (let i = this.anims.length - 1; i >= 0; i--) {
-                let a = this.anims[i];
-                let progress = (now - a.start) / a.duration;
-                if (progress >= 1) {
-                    this.anims.splice(i, 1);
-                } else if (a.type === 'side_bite') {
-                    let snap = Math.sin(progress * Math.PI);
-                    let offset = -70 + (progress * 70);
-                    let headX = a.x + Math.cos(a.angle) * offset;
-                    let headY = a.y + Math.sin(a.angle) * offset;
-
-                    // Draw victim goat being bitten
-                    ctx.font = "38px Arial";
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-                    ctx.fillText("🐐", a.x, a.y);
-                    this.drawSideTigerHead(ctx, headX, headY, snap, a.angle);
                 }
             }
 

@@ -182,7 +182,7 @@
                 Turn: 🐐</div>
         </div>
 
-        <canvas id="board" width="400" height="400"></canvas>
+        <canvas id="board" width="420" height="420"></canvas>
 
         <div id="obxDisplay"
             style="width: 92vw; max-width: 380px; text-align: center; font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.5); color: var(--accent-glow); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); word-break: break-all;">
@@ -329,7 +329,7 @@
             goatTime = 0; tigerTime = 0; moveCount = 0; lastMoveNotation = "-";
             mode = document.querySelector('input[name="mode"]:checked').value;
             points = [];
-            for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) points.push({ x: 40 + x * 80, y: 40 + y * 80, piece: null, r: y, c: x, highlight: false });
+            for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) points.push({ x: 50 + x * 80, y: 50 + y * 80, piece: null, r: y, c: x, highlight: false });
             [0, 4, 20, 24].forEach(i => points[i].piece = "tiger");
             updateUI(); startTimers(); requestAnimationFrame(renderLoop);
         }
@@ -409,8 +409,8 @@
             startAudioContext();
             if (gameOver || (mode === 'single' && turn === 'tiger') || anims.length > 0) return;
             const rect = canvas.getBoundingClientRect();
-            const x = ((e.clientX || (e.touches && e.touches[0].clientX)) - rect.left) * (400 / rect.width);
-            const y = ((e.clientY || (e.touches && e.touches[0].clientY)) - rect.top) * (400 / rect.height);
+            const x = ((e.clientX || (e.touches && e.touches[0].clientX)) - rect.left) * (420 / rect.width);
+            const y = ((e.clientY || (e.touches && e.touches[0].clientY)) - rect.top) * (420 / rect.height);
             const idx = points.findIndex(p => Math.hypot(p.x - x, p.y - y) < 30);
             if (idx === -1) return;
             if (turn === "goat" && goatsPlaced < 20) {
@@ -454,15 +454,35 @@
         }
 
         function renderLoop() {
-            ctx.globalAlpha = 1.0; ctx.fillStyle = "#e0d5c1"; ctx.fillRect(0, 0, 400, 400);
+            ctx.globalAlpha = 1.0; ctx.fillStyle = "#e0d5c1"; ctx.fillRect(0, 0, 420, 420);
             ctx.strokeStyle = "rgba(0, 64, 65, 0.8)"; ctx.lineWidth = 2;
             for (let i = 0; i < 5; i++) {
-                ctx.beginPath(); ctx.moveTo(40, 40 + i * 80); ctx.lineTo(360, 40 + i * 80); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(40 + i * 80, 40); ctx.lineTo(40 + i * 80, 360); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(50, 50 + i * 80); ctx.lineTo(370, 50 + i * 80); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(50 + i * 80, 50); ctx.lineTo(50 + i * 80, 370); ctx.stroke();
             }
-            ctx.beginPath(); ctx.moveTo(40, 40); ctx.lineTo(360, 360); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(360, 40); ctx.lineTo(40, 360); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(200, 40); ctx.lineTo(360, 200); ctx.lineTo(200, 360); ctx.lineTo(40, 200); ctx.closePath(); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(50, 50); ctx.lineTo(370, 370); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(370, 50); ctx.lineTo(50, 370); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(210, 50); ctx.lineTo(370, 210); ctx.lineTo(210, 370); ctx.lineTo(50, 210); ctx.closePath(); ctx.stroke();
+
+            // Draw Grid Labels (ABCDE horizontally, 12345 vertically)
+            ctx.font = "bold 13px 'Segoe UI', monospace";
+            ctx.fillStyle = "rgba(0, 64, 65, 0.85)";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            const cols = ["A", "B", "C", "D", "E"];
+            cols.forEach((col, i) => {
+                const x = 50 + i * 80;
+                ctx.fillText(col, x, 20);
+                ctx.fillText(col, x, 400);
+            });
+
+            const rows = ["1", "2", "3", "4", "5"];
+            rows.forEach((row, i) => {
+                const y = 50 + i * 80;
+                ctx.fillText(row, 20, y);
+                ctx.fillText(row, 400, y);
+            });
 
             points.forEach((p, i) => {
                 ctx.fillStyle = "rgb(0, 64, 65)";

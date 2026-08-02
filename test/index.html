@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baghchal Test Page</title>
+    <script src="../baghchal.js"></script>
+</head>
+
+<body>
+    <h1>Baghchal Test Page</h1>
+
+    <div id="board"></div>
+
+    <script>
+        // Test OBX moves
+        const obxMoves = [
+            "mB3C2",
+            "TXXXT/XGXXX/XXXXX/XXXXX/TXXXT g @2 c1 mA3B2"
+        ];
+
+        obxMoves.forEach(move => {
+            console.log(`Testing move: ${move}`);
+
+            // Create a new board instance
+            const board = new Baghchal('#board');
+
+            // Parse and apply move
+            try {
+                board.parseObxMove(move);
+                console.log("✅ Move applied successfully");
+            } catch (error) {
+                console.error("❌ Error applying move:", error.message);
+            }
+
+            // Get the board state
+            const boardState = board.getBoard();
+            console.log("Board state:", boardState);
+        });
+    </script>
+</body>
+
+</html>
